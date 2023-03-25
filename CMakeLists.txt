@@ -13,3 +13,5 @@ add_library(libcrypto src/pbkdf2.c src/aes_cbc.c src/salt.c)
 
 include(CTest)
 add_subdirectory(test)
+
+install(TARGETS libcrypto DESTINATION libcrypto)
