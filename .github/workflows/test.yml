@@ -23,5 +23,5 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -DCMAKE_CC_COMPILER=${{ matrix.compiler }} ..
+          cmake -DCMAKE_C_COMPILER=${{ matrix.compiler }} ..
           make all test
