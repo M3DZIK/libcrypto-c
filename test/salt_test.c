@@ -14,9 +14,9 @@ int main()
         return 1;
     }
 
-    // check that salt is 16 bytes long
+    // check if salt length is correct
     if (strlen((char*) salt) != SALT_LEN) {
-        fprintf(stderr, "Salt is not 16 bytes long.\n");
+        fprintf(stderr, "Salt is not %i bytes long.\n", SALT_LEN);
         return 1;
     }
 }
