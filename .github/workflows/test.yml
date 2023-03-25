@@ -1,0 +1,21 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+    test:
+        name: Test
+        runs-on: ubuntu-latest
+        steps:
+          - name: Checkout
+            uses: actions/checkout@v3
+
+          - name: Build and Run Tests
+            run: |
+              mkdir build
+              cd build
+              cmake ..
+              make all test
