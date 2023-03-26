@@ -15,17 +15,17 @@ int main()
     char *encrypted = aes_cbc_encrypt(CLEAR_TEXT, hash);
     char *decrypted = aes_cbc_decrypt(encrypted, hash);
     if (strcmp(decrypted, CLEAR_TEXT) != 0) {
-        printf("Decrypted text does not match clear text\n");
-        printf("Expected: %s\n", CLEAR_TEXT);
-        printf("Actual: %s\n", decrypted);
+        fprintf(stderr, "text after encryption and decryption does not match clear text\n");
+        fprintf(stderr, "Expected: %s\n", CLEAR_TEXT);
+        fprintf(stderr, "Actual: %s\n", decrypted);
         return 1;
     }
 
     char *decrypted_two = aes_cbc_decrypt(EXAMPLE_CIPHERTEXT, hash);
     if (strcmp(decrypted_two, CLEAR_TEXT) != 0) {
-        printf("Decrypted text does not match clear text\n");
-        printf("Expected: %s\n", CLEAR_TEXT);
-        printf("Actual: %s\n", decrypted_two);
+        fprintf(stderr, "Decrypted text does not match clear text\n");
+        fprintf(stderr, "Expected: %s\n", CLEAR_TEXT);
+        fprintf(stderr, "Actual: %s\n", decrypted_two);
         return 1;
     }
 
