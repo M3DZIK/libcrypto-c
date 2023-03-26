@@ -3,15 +3,29 @@
 #include <stdio.h>
 #include <string.h>
 
-char *aes_cbc_encrypt(const char *cleartext, const char *key)
+/**
+ * Convert hexadecimal string to bytes.
+ * @param key hexadecimal string
+ * @return bytes
+ */
+unsigned char *process_key(const char *key)
 {
-    // convert hexadecimal key and ciphertext to bytes
     unsigned char* secret_key = (unsigned char*) malloc(strlen(key) / 2);
+
     int secret_key_length = (int) strlen(key) / 2;
+
     for (int i = 0; i < secret_key_length; i++) {
         char byte_string[3] = { key[i * 2], key[i * 2 + 1], '\0' };
         secret_key[i] = (unsigned char)strtoul(byte_string, NULL, 16);
     }
+
+    return secret_key;
+}
+
+char *aes_cbc_encrypt(const char *cleartext, const char *key)
+{
+    // convert hexadecimal key and ciphertext to bytes
+    unsigned char* secret_key = process_key(key);
 
     // generate initialization vector
     unsigned char *iv = generate_salt(AES_BLOCK_SIZE);
@@ -28,64 +42,39 @@ char *aes_cbc_encrypt(const char *cleartext, const char *key)
 
     // initialize cipher context
     if (EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, (unsigned char*) secret_key, iv) != 1) {
-        EVP_CIPHER_CTX_free(ctx);
-        free(secret_key);
-        free(iv);
-
         fprintf(stderr, "Error initializing cipher context.\n");
-        return NULL;
+        goto cleanup;
     }
 
     // allocate memory for ciphertext
     int ciphertext_len = (int) strlen(cleartext) + AES_BLOCK_SIZE;
     unsigned char *ciphertext = (unsigned char*) malloc(ciphertext_len);
     if (!ciphertext) {
-        EVP_CIPHER_CTX_free(ctx);
-        free(secret_key);
-        free(iv);
-
         fprintf(stderr, "Error allocating memory for ciphertext.\n");
-        return NULL;
+        goto cleanup;
     }
 
     // encrypt plaintext
     int update_len = 0;
     if (EVP_EncryptUpdate(ctx, ciphertext, &update_len, (unsigned char*) cleartext, (int) strlen(cleartext)) != 1) {
-        EVP_CIPHER_CTX_free(ctx);
-        free(secret_key);
-        free(iv);
-        free(ciphertext);
-
         fprintf(stderr, "Error encrypting plaintext.\n");
-        return NULL;
+        goto cleanup;
     }
     ciphertext_len = update_len;
 
     // finalize encryption
     int final_len = 0;
     if (EVP_EncryptFinal_ex(ctx, ciphertext + ciphertext_len, &final_len) != 1) {
-        EVP_CIPHER_CTX_free(ctx);
-        free(secret_key);
-        free(iv);
-        free(ciphertext);
-
         fprintf(stderr, "Error finalizing encryption.\n");
-        return NULL;
+        goto cleanup;
     }
     ciphertext_len += final_len;
-
-    // free cipher context
-    EVP_CIPHER_CTX_free(ctx);
 
     // return iv + ciphertext as a single hex string
     char *hex = (char*) malloc(ciphertext_len * 2 + AES_BLOCK_SIZE * 2 + 1);
     if (!hex) {
-        free(ciphertext);
-        free(secret_key);
-        free(iv);
-
         fprintf(stderr, "Error allocating memory for hex string.\n");
-        return NULL;
+        goto cleanup;
     }
 
     // append iv to ciphertext
@@ -98,23 +87,29 @@ char *aes_cbc_encrypt(const char *cleartext, const char *key)
         sprintf(hex + AES_BLOCK_SIZE * 2 + i * 2, "%02x", ciphertext[i]);
     }
 
+    // free cipher context
+    EVP_CIPHER_CTX_free(ctx);
+
     // free memory
     free(ciphertext);
     free(secret_key);
     free(iv);
 
     return hex;
+
+cleanup:
+    EVP_CIPHER_CTX_free(ctx);
+    free(secret_key);
+    free(iv);
+    free(ciphertext);
+
+    return NULL;
 }
 
 char *aes_cbc_decrypt(const char *cipher_text, const char *key)
 {
     // convert hexadecimal key and ciphertext to bytes
-    unsigned char *secret_key = (unsigned char*) malloc(strlen(key) / 2);
-    int secret_key_length = (int) strlen(key) / 2;
-    for (int i = 0; i < secret_key_length; i++) {
-        char byte_string[3] = { key[i * 2], key[i * 2 + 1], '\0' };
-        secret_key[i] = (unsigned char)strtoul(byte_string, NULL, 16);
-    }
+    unsigned char* secret_key = process_key(key);
 
     // convert hexadecimal ciphertext to bytes
     int cipher_text_length = (int) strlen(cipher_text) / 2;
@@ -133,24 +128,22 @@ char *aes_cbc_decrypt(const char *cipher_text, const char *key)
     // create an EVP cipher context
     EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
     if (!ctx) {
-        // free memory
+        fprintf(stderr, "Error creating EVP context");
+
         free(secret_key);
         free(cipher_text_bytes);
 
-        fprintf(stderr, "Error creating EVP context");
         return NULL;
     }
 
     // initialize the cipher context with the key and IV
     if (EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, secret_key, cipher_text_bytes) != 1) {
-        // free cipher context
-        EVP_CIPHER_CTX_free(ctx);
+        fprintf(stderr, "Error initializing decryption");
 
-        // free memory
+        EVP_CIPHER_CTX_free(ctx);
         free(secret_key);
         free(cipher_text_bytes);
 
-        fprintf(stderr, "Error initializing decryption");
         return NULL;
     }
 
@@ -161,31 +154,15 @@ char *aes_cbc_decrypt(const char *cipher_text, const char *key)
     // perform decryption in a single call
     int decrypted_length = 0;
     if (EVP_DecryptUpdate(ctx, decrypted_text_bytes, &decrypted_length, cipher_text_bytes + EVP_CIPHER_block_size(EVP_aes_256_cbc()), (int) decrypted_text_len) != 1) {
-        // free cipher context
-        EVP_CIPHER_CTX_free(ctx);
-
-        // free memory
-        free(secret_key);
-        free(cipher_text_bytes);
-        free(decrypted_text_bytes);
-
         fprintf(stderr, "Error performing decryption");
-        return NULL;
+        goto cleanup;
     }
 
     // finalize the decryption
     int final_length = 0;
     if (EVP_DecryptFinal_ex(ctx, decrypted_text_bytes + decrypted_length, &final_length) != 1) {
-        // free cipher context
-        EVP_CIPHER_CTX_free(ctx);
-
-        // free memory
-        free(secret_key);
-        free(cipher_text_bytes);
-        free(decrypted_text_bytes);
-
         fprintf(stderr, "Error finalizing decryption");
-        return NULL;
+        goto cleanup;
     }
     decrypted_length += final_length;
 
@@ -203,4 +180,12 @@ char *aes_cbc_decrypt(const char *cipher_text, const char *key)
     free(decrypted_text_bytes);
 
     return decryptedText;
+
+cleanup:
+    EVP_CIPHER_CTX_free(ctx);
+    free(secret_key);
+    free(cipher_text_bytes);
+    free(decrypted_text_bytes);
+
+    return NULL;
 }
