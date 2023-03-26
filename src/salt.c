@@ -1,4 +1,4 @@
-#include "../include/libcrypto.h"
+#include "libcrypto.h"
 
 #include <stdio.h>
 #include <openssl/rand.h>

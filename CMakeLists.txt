@@ -9,9 +9,10 @@ set(CMAKE_C_STANDARD 17)
 
 find_package(OpenSSL REQUIRED)
 
-add_library(libcrypto src/pbkdf2.c src/aes_cbc.c src/salt.c)
+include_directories(include)
+install(FILES include/libcrypto.h DESTINATION include)
+
+add_subdirectory(src)
 
 include(CTest)
 add_subdirectory(test)
-
-install(TARGETS libcrypto DESTINATION libcrypto)
