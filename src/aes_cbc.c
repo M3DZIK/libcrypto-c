@@ -2,8 +2,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <openssl/aes.h>
-#include <openssl/evp.h>
 
 char *aes_cbc_encrypt(const char *cleartext, const char *key)
 {

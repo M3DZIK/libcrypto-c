@@ -1,7 +1,6 @@
 #include "libcrypto.h"
 
 #include <string.h>
-#include <openssl/evp.h>
 
 char *hash_to_hex(const char *key, int key_len)
 {

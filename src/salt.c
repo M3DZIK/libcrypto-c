@@ -1,7 +1,6 @@
 #include "libcrypto.h"
 
 #include <stdio.h>
-#include <openssl/rand.h>
 
 unsigned char *generate_salt(int salt_len)
 {
