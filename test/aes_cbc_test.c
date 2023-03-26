@@ -21,6 +21,9 @@ int main()
         return 1;
     }
 
+    free(encrypted);
+    free(decrypted);
+
     char *decrypted_two = aes_cbc_decrypt(EXAMPLE_CIPHERTEXT, hash);
     if (strcmp(decrypted_two, CLEAR_TEXT) != 0) {
         fprintf(stderr, "Decrypted text does not match clear text\n");
@@ -28,6 +31,9 @@ int main()
         fprintf(stderr, "Actual: %s\n", decrypted_two);
         return 1;
     }
+
+    free(decrypted_two);
+    free(hash);
 
     return 0;
 }

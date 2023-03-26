@@ -11,7 +11,6 @@
 int main()
 {
     char *hash_sha256 = pbkdf2_hash_sha256(PASSWORD, SALT, 1000);
-
     if (strcmp(hash_sha256, EXPECTED_SHA256) != 0) {
         fprintf(stderr, "hash mismatch\n");
         fprintf(stderr, "Expected: %s\n", EXPECTED_SHA256);
@@ -19,14 +18,17 @@ int main()
         return 1;
     }
 
-    char *hash_sha512 = pbkdf2_hash_sha512(PASSWORD, SALT, 1000);
+    free(hash_sha256);
 
+    char *hash_sha512 = pbkdf2_hash_sha512(PASSWORD, SALT, 1000);
     if (strcmp(hash_sha512, EXPECTED_SHA512) != 0) {
         fprintf(stderr, "hash mismatch\n");
         fprintf(stderr, "Expected: %s\n", EXPECTED_SHA512);
         fprintf(stderr, "Actual: %s\n", hash_sha512);
         return 1;
     }
+
+    free(hash_sha512);
 
     return 0;
 }

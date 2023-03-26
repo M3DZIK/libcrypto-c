@@ -19,4 +19,6 @@ int main()
         fprintf(stderr, "Salt length is not correct.\n");
         return 1;
     }
+
+    free(salt);
 }
